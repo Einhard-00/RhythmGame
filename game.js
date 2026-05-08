@@ -78,7 +78,7 @@ document.getElementById('beatmap-upload').addEventListener('change', e => {
       state.beatmap   = (data.notes || data).sort((a,b)=>a.time-b.time);
       // state.subtitles = data.subtitles || [];
       state.beatmapLoaded = true;
-      loadStatus.textContent = `Beatmap: ${state.beatmap.length} notes, ${state.subtitles.length} subtitles`;
+      loadStatus.textContent = `Beatmap: ${state.beatmap.length} notes`;
       updateLoadStatus();
     } catch(err) { alert('Beatmap tidak valid! '+err); }
   };
@@ -351,13 +351,14 @@ function showHitFx(laneIdx,text,color){
 }
 
 function flashSubtitle(){
+  if(!subtitleEl) return;
   subtitleEl.classList.remove('flash');
   void subtitleEl.offsetWidth;
   subtitleEl.classList.add('flash');
 }
 
 function updateSubtitle(elapsed){
-  if(!state.subtitles.length) return;
+  if(!subtitleEl || !state.subtitles || !state.subtitles.length) return;
   for(const sub of state.subtitles){
     if(elapsed>=sub.time && elapsed<sub.time+(sub.duration||3000)){
       if(subtitleEl.dataset.subTime!==String(sub.time)){
@@ -386,8 +387,10 @@ function updateHUD(elapsed){
   document.getElementById('acc-num').textContent=acc+'%';
   const lastT=state.beatmap[state.beatmap.length-1]?.time||1;
   progressEl.style.width=Math.min(100,(elapsed/lastT)*100)+'%';
-  const s=Math.floor(elapsed/1000);
-  timingEl.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  if(timingEl) {
+    const s=Math.floor(elapsed/1000);
+    timingEl.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  }
 }
 
 function endGame(){
