@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RhythmFlow — Beatmap Editor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --cyan: #00f5ff;
+    --pink: #ff006e;
+    --yellow: #ffbe0b;
+    --green: #06d6a0;
+    --bg: #060614;
+    --panel: #0d0d22;
+    --border: rgba(0,245,255,0.18);
+    --key-d: #ff006e;
+    --key-f: #ffbe0b;
+    --key-j: #00f5ff;
+    --key-k: #06d6a0;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── TOP BAR ─── */
+  #topbar {
+    height: 48px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+
+  #topbar h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--cyan);
+    letter-spacing: 3px;
+    margin-right: 12px;
+  }
+
+  .tb-btn {
+    padding: 5px 14px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  .tb-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .tb-btn.active { background: var(--cyan); color: var(--bg); border-color: var(--cyan); }
+  .tb-btn.pink { border-color: rgba(255,0,110,0.4); }
+  .tb-btn.pink:hover { border-color: var(--pink); color: var(--pink); }
+  .tb-btn.green { border-color: rgba(6,214,160,0.4); }
+  .tb-btn.green:hover { border-color: var(--green); color: var(--green); }
+
+  .sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+  #bpm-input {
+    width: 70px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    color: var(--yellow);
+    padding: 4px 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    text-align: center;
+  }
+
+  #playhead-time {
+    font-size: 13px;
+    color: var(--cyan);
+    min-width: 90px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  /* ─── MAIN AREA ─── */
+  #main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ─── SIDEBAR ─── */
+  #sidebar {
+    width: 260px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .side-section {
+    border-bottom: 1px solid var(--border);
+    padding: 12px;
+  }
+
+  .side-section h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    color: var(--cyan);
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .form-row label { color: rgba(255,255,255,0.5); min-width: 60px; font-size: 11px; }
+
+  input[type="text"], input[type="number"], textarea, select {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: #fff;
+    padding: 5px 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--cyan); }
+  textarea { resize: vertical; min-height: 60px; }
+  select option { background: var(--panel); }
+
+  label.upload-btn {
+    display: block;
+    padding: 7px;
+    border: 1px dashed var(--border);
+    text-align: center;
+    cursor: pointer;
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+    transition: all 0.15s;
+    margin-bottom: 6px;
+  }
+  label.upload-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  input[type="file"] { display: none; }
+
+  /* Lane selector */
+  .lane-selector {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .lane-btn {
+    flex: 1;
+    padding: 7px 4px;
+    border: 1px solid;
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    font-weight: bold;
+    transition: all 0.1s;
+    text-align: center;
+  }
+  .lane-btn[data-l="0"] { border-color: var(--key-d); color: var(--key-d); }
+  .lane-btn[data-l="1"] { border-color: var(--key-f); color: var(--key-f); }
+  .lane-btn[data-l="2"] { border-color: var(--key-j); color: var(--key-j); }
+  .lane-btn[data-l="3"] { border-color: var(--key-k); color: var(--key-k); }
+  .lane-btn.sel[data-l="0"] { background: var(--key-d); color: #000; }
+  .lane-btn.sel[data-l="1"] { background: var(--key-f); color: #000; }
+  .lane-btn.sel[data-l="2"] { background: var(--key-j); color: #000; }
+  .lane-btn.sel[data-l="3"] { background: var(--key-k); color: #000; }
+
+  .small-btn {
+    padding: 5px 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .small-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .small-btn.danger:hover { border-color: var(--pink); color: var(--pink); }
+
+  /* ─── TIMELINE AREA ─── */
+  #timeline-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Transport controls */
+  #transport {
+    height: 40px;
+    background: rgba(0,0,0,0.3);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    flex-shrink: 0;
+  }
+
+  .t-btn {
+    padding: 4px 12px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .t-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .t-btn.playing { border-color: var(--pink); color: var(--pink); }
+
+  #zoom-range {
+    width: 80px;
+    accent-color: var(--cyan);
+  }
+
+  /* Waveform + timeline canvas */
+  #timeline-wrapper {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    background: var(--bg);
+  }
+
+  #timeline-canvas {
+    display: block;
+    cursor: crosshair;
+    image-rendering: pixelated;
+  }
+
+  /* Subtitle list */
+  #sub-list-area {
+    height: 180px;
+    border-top: 1px solid var(--border);
+    overflow-y: auto;
+    flex-shrink: 0;
+    background: var(--panel);
+  }
+
+  #sub-list-area h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    color: var(--green);
+    letter-spacing: 2px;
+    padding: 8px 12px 4px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--panel);
+    z-index: 1;
+  }
+
+  #sub-list {
+    padding: 4px 8px;
+  }
+
+  .sub-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .sub-item:hover { background: rgba(6,214,160,0.05); }
+  .sub-item.active { background: rgba(6,214,160,0.1); }
+
+  .sub-time-tag {
+    font-size: 10px;
+    color: var(--green);
+    min-width: 50px;
+  }
+  .sub-text-preview {
+    flex: 1;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sub-dur-tag { font-size: 10px; color: rgba(255,255,255,0.3); min-width: 40px; }
+  .sub-del { font-size: 12px; cursor: pointer; color: rgba(255,0,110,0.5); padding: 0 4px; }
+  .sub-del:hover { color: var(--pink); }
+
+  /* Note count bar */
+  #stats-bar {
+    height: 28px;
+    background: rgba(0,0,0,0.4);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 12px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    flex-shrink: 0;
+  }
+  #stats-bar span { color: var(--cyan); }
+
+  /* ─── SUBTITLE FORM MODAL ─── */
+  #sub-form-panel {
+    position: fixed;
+    right: 16px;
+    bottom: 60px;
+    width: 300px;
+    background: var(--panel);
+    border: 1px solid var(--green);
+    padding: 14px;
+    z-index: 50;
+    display: none;
+    box-shadow: 0 0 20px rgba(6,214,160,0.2);
+  }
+
+  #sub-form-panel h4 {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+
+  /* ─── HELP OVERLAY ─── */
+  #help-panel {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,5,20,0.95);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .help-box {
+    border: 1px solid var(--cyan);
+    padding: 32px;
+    max-width: 500px;
+    width: 90%;
+  }
+  .help-box h2 {
+    font-family: 'Orbitron', monospace;
+    color: var(--cyan);
+    font-size: 16px;
+    margin-bottom: 20px;
+    letter-spacing: 3px;
+  }
+  .help-box table { border-collapse: collapse; width: 100%; }
+  .help-box td { padding: 5px 8px; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .help-box td:first-child { color: var(--cyan); min-width: 120px; font-weight: bold; }
+  .help-box td:last-child { color: rgba(255,255,255,0.6); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,245,255,0.2); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(0,245,255,0.5); }
+</style>
+</head>
+<body>
+
+<!-- ─── TOP BAR ─── -->
+<div id="topbar">
+  <h1>EDITOR</h1>
+  <label class="tb-btn" for="ed-audio">🎵 Audio</label>
+  <input type="file" id="ed-audio" accept="audio/*">
+  <div class="sep"></div>
+  <button class="tb-btn" id="tb-play">▶ Play</button>
+  <button class="tb-btn" id="tb-stop">■ Stop</button>
+  <div id="playhead-time">00:00.000</div>
+  <div class="sep"></div>
+  <label style="color:rgba(255,255,255,0.4);font-size:11px;">BPM</label>
+  <input type="number" id="bpm-input" value="128" min="40" max="300">
+  <label style="color:rgba(255,255,255,0.4);font-size:11px;">Snap</label>
+  <select id="snap-select" style="width:80px;flex:none;">
+    <option value="0">Free</option>
+    <option value="1" selected>1/1</option>
+    <option value="2">1/2</option>
+    <option value="4">1/4</option>
+    <option value="8">1/8</option>
+    <option value="16">1/16</option>
+  </select>
+  <div class="sep"></div>
+  <label style="color:rgba(255,255,255,0.4);font-size:11px;">Zoom</label>
+  <input type="range" id="zoom-range" min="50" max="500" value="120">
+  <div class="sep"></div>
+  <button class="tb-btn green" id="tb-export">💾 Export JSON</button>
+  <button class="tb-btn pink" id="tb-import">📂 Import</button>
+  <input type="file" id="tb-import-file" accept=".json" style="display:none">
+  <button class="tb-btn" id="tb-help" style="margin-left:auto;">? Help</button>
+</div>
+
+<!-- ─── MAIN ─── -->
+<div id="main">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+
+    <!-- Note placement -->
+    <div class="side-section">
+      <h3>Tambah Note</h3>
+      <div class="lane-selector">
+        <button class="lane-btn sel" data-l="0">D</button>
+        <button class="lane-btn" data-l="1">F</button>
+        <button class="lane-btn" data-l="2">J</button>
+        <button class="lane-btn" data-l="3">K</button>
+      </div>
+      <div class="form-row">
+        <label>Time (ms)</label>
+        <input type="number" id="note-time" placeholder="auto" min="0">
+      </div>
+      <div style="display:flex;gap:6px;margin-top:4px;">
+        <button class="small-btn" id="add-note-btn" style="flex:1;">+ Tambah Note</button>
+        <button class="small-btn" id="note-at-play-btn" style="flex:1;">+ At Playhead</button>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:rgba(255,255,255,0.3);">
+        Shortcut: D/F/J/K saat play = place note
+      </div>
+    </div>
+
+    <!-- Auto-generate -->
+    <div class="side-section">
+      <h3>Auto Generate</h3>
+      <div class="form-row">
+        <label>Start (ms)</label>
+        <input type="number" id="gen-start" value="0" min="0">
+      </div>
+      <div class="form-row">
+        <label>End (ms)</label>
+        <input type="number" id="gen-end" value="10000" min="0">
+      </div>
+      <div class="form-row">
+        <label>Pattern</label>
+        <select id="gen-pattern">
+          <option value="4th">Quarter (1/4)</option>
+          <option value="8th">8th note</option>
+          <option value="alt">Alternating</option>
+          <option value="rand">Random</option>
+        </select>
+      </div>
+      <button class="small-btn" id="gen-btn" style="width:100%;">⚡ Generate</button>
+    </div>
+
+    <!-- Subtitle -->
+    <div class="side-section">
+      <h3>Subtitle</h3>
+      <div class="form-row">
+        <label>Time (ms)</label>
+        <input type="number" id="sub-time-inp" placeholder="playhead" min="0">
+      </div>
+      <div class="form-row">
+        <label>Durasi</label>
+        <input type="number" id="sub-dur-inp" value="3000" min="100">
+      </div>
+      <div style="margin-bottom:6px;">
+        <textarea id="sub-text-inp" placeholder="Teks subtitle lirik lagu..." style="width:100%;"></textarea>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="small-btn" id="add-sub-btn" style="flex:1;">+ Tambah</button>
+        <button class="small-btn" id="sub-at-play-btn" style="flex:1;">At Playhead</button>
+      </div>
+    </div>
+
+    <!-- Edit selection -->
+    <div class="side-section">
+      <h3>Selection</h3>
+      <div id="selection-info" style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:8px;">Klik note di timeline untuk select</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="small-btn danger" id="del-selected-btn">🗑 Hapus</button>
+        <button class="small-btn" id="clear-all-btn">✖ Clear All</button>
+      </div>
+    </div>
+
+    <!-- Metadata -->
+    <div class="side-section">
+      <h3>Metadata</h3>
+      <div class="form-row">
+        <label>Judul</label>
+        <input type="text" id="meta-title" placeholder="Nama Lagu">
+      </div>
+      <div class="form-row">
+        <label>Artis</label>
+        <input type="text" id="meta-artist" placeholder="Nama Artis">
+      </div>
+      <div class="form-row">
+        <label>Offset</label>
+        <input type="number" id="meta-offset" value="0" placeholder="ms">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TIMELINE AREA -->
+  <div id="timeline-area">
+    <div id="transport">
+      <button class="t-btn" id="tp-rewind">⏮</button>
+      <button class="t-btn" id="tp-play">▶</button>
+      <button class="t-btn" id="tp-stop">■</button>
+      <div style="flex:1"></div>
+      <span style="font-size:11px;color:rgba(255,255,255,0.3);">Timeline — klik untuk place note | Drag untuk scroll</span>
+    </div>
+
+    <div id="timeline-wrapper">
+      <canvas id="timeline-canvas"></canvas>
+    </div>
+
+    <!-- Subtitle list -->
+    <div id="sub-list-area">
+      <h3>SUBTITLES — <span id="sub-count" style="color:var(--yellow);">0</span> keyframe</h3>
+      <div id="sub-list"></div>
+    </div>
+
+    <div id="stats-bar">
+      Total notes: <span id="stat-total">0</span> |
+      D: <span id="stat-d">0</span>
+      F: <span id="stat-f">0</span>
+      J: <span id="stat-j">0</span>
+      K: <span id="stat-k">0</span> |
+      Durasi: <span id="stat-dur">0:00</span>
+    </div>
+  </div>
+</div>
+
+<!-- HELP PANEL -->
+<div id="help-panel">
+  <div class="help-box">
+    <h2>KEYBOARD SHORTCUTS</h2>
+    <table>
+      <tr><td>Space</td><td>Play / Pause</td></tr>
+      <tr><td>S</td><td>Stop & kembali ke awal</td></tr>
+      <tr><td>D / F / J / K</td><td>Place note di lane saat play</td></tr>
+      <tr><td>Delete / Backspace</td><td>Hapus note terpilih</td></tr>
+      <tr><td>Ctrl+Z</td><td>Undo (coming soon)</td></tr>
+      <tr><td>Ctrl+S</td><td>Export JSON</td></tr>
+      <tr><td>← →</td><td>Geser playhead ±100ms</td></tr>
+      <tr><td>Scroll</td><td>Scroll timeline</td></tr>
+      <tr><td>Klik timeline</td><td>Set playhead / place note</td></tr>
+      <tr><td>Klik note</td><td>Select note</td></tr>
+    </table>
+    <div style="margin-top:20px;text-align:center;">
+      <button class="tb-btn" id="close-help">TUTUP</button>
+    </div>
+  </div>
+</div>
+
+<audio id="ed-audio-player" preload="auto"></audio>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  RHYTHMFLOW BEATMAP EDITOR
+// ═══════════════════════════════════════════════════════
+
+const audioEl = document.getElementById('ed-audio-player');
+const canvas = document.getElementById('timeline-canvas');
+const ctx = canvas.getContext('2d');
+const wrapper = document.getElementById('timeline-wrapper');
+
+// Editor state
+const es = {
+  notes: [],       // {time, lane}
+  subtitles: [],   // {time, duration, text}
+  bpm: 128,
+  snap: 4,         // beats per snap (0 = free)
+  zoom: 120,       // px per second
+  playheadMs: 0,
+  duration: 0,     // audio duration ms
+  playing: false,
+  audioOffset: 0,
+  selectedNote: null,
+  selectedLane: 0,
+  dragging: false,
+  dragStartX: 0,
+  scrollStart: 0,
+  audioCtx: null,
+  audioBuffer: null,
+  audioSource: null,
+  startAudioTime: 0,
+  startPlayheadMs: 0,
+};
+
+// Colors
+const LANE_COLORS = ['#ff006e','#ffbe0b','#00f5ff','#06d6a0'];
+const LANE_NAMES = ['D','F','J','K'];
+const LANE_HEIGHT = 24;
+const HEADER_H = 40;
+const WAVEFORM_H = 60;
+const LANE_START = HEADER_H + WAVEFORM_H;
+const TOTAL_H = LANE_START + LANE_HEIGHT * 4 + 20;
+const LANE_Y = [0,1,2,3].map(i => LANE_START + i * LANE_HEIGHT);
+
+// ─── Audio Loading ───
+document.getElementById('ed-audio').addEventListener('change', async e => {
+  const f = e.target.files[0]; if(!f) return;
+  const url = URL.createObjectURL(f);
+  audioEl.src = url;
+  await audioEl.load();
+
+  // Decode for waveform
+  const ab = await f.arrayBuffer();
+  if(!es.audioCtx) es.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  es.audioBuffer = await es.audioCtx.decodeAudioData(ab);
+  es.duration = es.audioBuffer.duration * 1000;
+  document.getElementById('gen-end').value = Math.floor(es.duration);
+
+  drawWaveform();
+  redraw();
+  showToast('Audio dimuat: ' + f.name);
+});
+
+// Waveform drawing
+function drawWaveform() {
+  if(!es.audioBuffer) return;
+  // Stored as data, drawn in redraw
+  es.waveformData = getWaveformData(es.audioBuffer, 2000);
+}
+
+function getWaveformData(buffer, points) {
+  const data = buffer.getChannelData(0);
+  const step = Math.floor(data.length / points);
+  const result = new Float32Array(points);
+  for(let i=0; i<points; i++) {
+    let max = 0;
+    for(let j=0; j<step; j++) {
+      max = Math.max(max, Math.abs(data[i*step+j] || 0));
+    }
+    result[i] = max;
+  }
+  return result;
+}
+
+// ─── Canvas Setup ───
+function setupCanvas() {
+  const totalMs = Math.max(es.duration || 60000, 30000);
+  const W = Math.ceil((totalMs / 1000) * es.zoom) + 200;
+  canvas.width = W;
+  canvas.height = TOTAL_H;
+  canvas.style.height = TOTAL_H + 'px';
+}
+
+// ─── Redraw ───
+function redraw() {
+  setupCanvas();
+  const W = canvas.width;
+  ctx.clearRect(0, 0, W, TOTAL_H);
+
+  // Background
+  ctx.fillStyle = '#060614';
+  ctx.fillRect(0, 0, W, TOTAL_H);
+
+  // Grid lines (beats)
+  drawGrid(W);
+
+  // Waveform
+  drawWaveformOnCanvas(W);
+
+  // Lane backgrounds
+  for(let i=0; i<4; i++) {
+    const y = LANE_Y[i];
+    ctx.fillStyle = i%2===0 ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.1)';
+    ctx.fillRect(0, y, W, LANE_HEIGHT);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+
+    // Lane label
+    ctx.fillStyle = LANE_COLORS[i];
+    ctx.font = 'bold 10px Share Tech Mono';
+    ctx.fillText(LANE_NAMES[i], 4, y + 16);
+  }
+
+  // Bottom border
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.beginPath();
+  ctx.moveTo(0, LANE_Y[3]+LANE_HEIGHT);
+  ctx.lineTo(W, LANE_Y[3]+LANE_HEIGHT);
+  ctx.stroke();
+
+  // Subtitle markers
+  for(const sub of es.subtitles) {
+    const x = msToX(sub.time);
+    const x2 = msToX(sub.time + (sub.duration || 3000));
+    ctx.fillStyle = 'rgba(6,214,160,0.12)';
+    ctx.fillRect(x, HEADER_H, x2-x, WAVEFORM_H);
+    ctx.strokeStyle = '#06d6a0';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, HEADER_H); ctx.lineTo(x, HEADER_H+WAVEFORM_H); ctx.stroke();
+    ctx.fillStyle = '#06d6a0';
+    ctx.font = '9px Share Tech Mono';
+    ctx.fillText('◆', x+2, HEADER_H+10);
+  }
+
+  // Notes
+  for(let i=0; i<es.notes.length; i++) {
+    const n = es.notes[i];
+    const x = msToX(n.time);
+    const y = LANE_Y[n.lane];
+    const isSelected = es.selectedNote === i;
+
+    ctx.fillStyle = LANE_COLORS[n.lane];
+    ctx.shadowColor = LANE_COLORS[n.lane];
+    ctx.shadowBlur = isSelected ? 10 : 4;
+    ctx.fillRect(x-8, y+3, 16, LANE_HEIGHT-6);
+    ctx.shadowBlur = 0;
+
+    if(isSelected) {
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x-8, y+3, 16, LANE_HEIGHT-6);
+    }
+  }
+
+  // Playhead
+  const px = msToX(es.playheadMs);
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#fff';
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  ctx.moveTo(px, 0);
+  ctx.lineTo(px, TOTAL_H);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Playhead triangle
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.moveTo(px-6, 0);
+  ctx.lineTo(px+6, 0);
+  ctx.lineTo(px, 10);
+  ctx.fill();
+
+  updateStats();
+}
+
+function drawGrid(W) {
+  const bpm = es.bpm || 128;
+  const beatMs = 60000 / bpm;
+  const totalMs = (W / es.zoom) * 1000;
+
+  // Sub-beat lines
+  const subDiv = Math.max(1, es.snap > 1 ? es.snap : 4);
+  for(let t=0; t<totalMs; t+=beatMs/subDiv) {
+    const x = msToX(t);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x,HEADER_H); ctx.lineTo(x,TOTAL_H); ctx.stroke();
+  }
+
+  // Beat lines
+  let beat = 0;
+  for(let t=0; t<totalMs; t+=beatMs, beat++) {
+    const x = msToX(t);
+    const isMeasure = beat % 4 === 0;
+    ctx.strokeStyle = isMeasure ? 'rgba(0,245,255,0.25)' : 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = isMeasure ? 1.5 : 1;
+    ctx.beginPath(); ctx.moveTo(x,HEADER_H); ctx.lineTo(x,TOTAL_H); ctx.stroke();
+
+    // Time label
+    if(isMeasure) {
+      const sec = t / 1000;
+      const label = `${Math.floor(sec/60)}:${String(Math.floor(sec%60)).padStart(2,'0')}`;
+      ctx.fillStyle = 'rgba(0,245,255,0.6)';
+      ctx.font = '10px Share Tech Mono';
+      ctx.fillText(label, x+3, 14);
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.fillText(`M${beat/4+1}`, x+3, 26);
+    }
+  }
+}
+
+function drawWaveformOnCanvas(W) {
+  if(!es.waveformData) {
+    ctx.fillStyle = 'rgba(0,245,255,0.05)';
+    ctx.fillRect(0, HEADER_H, W, WAVEFORM_H);
+    ctx.fillStyle = 'rgba(0,245,255,0.15)';
+    ctx.font = '11px Share Tech Mono';
+    ctx.fillText('[ Upload audio untuk melihat waveform ]', 20, HEADER_H + WAVEFORM_H/2 + 4);
+    return;
+  }
+  const data = es.waveformData;
+  const totalMs = (W / es.zoom) * 1000;
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fillRect(0, HEADER_H, W, WAVEFORM_H);
+
+  const midY = HEADER_H + WAVEFORM_H/2;
+  ctx.strokeStyle = 'rgba(0,245,255,0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for(let px=0; px<W; px++) {
+    const t = xToMs(px);
+    const idx = Math.floor((t / es.duration) * data.length);
+    const amp = (data[idx] || 0) * (WAVEFORM_H/2 - 4);
+    if(px===0) ctx.moveTo(px, midY - amp);
+    else ctx.lineTo(px, midY - amp);
+  }
+  ctx.stroke();
+  ctx.beginPath();
+  for(let px=0; px<W; px++) {
+    const t = xToMs(px);
+    const idx = Math.floor((t / es.duration) * data.length);
+    const amp = (data[idx] || 0) * (WAVEFORM_H/2 - 4);
+    if(px===0) ctx.moveTo(px, midY + amp);
+    else ctx.lineTo(px, midY + amp);
+  }
+  ctx.stroke();
+}
+
+// ─── Coordinate helpers ───
+function msToX(ms) { return (ms / 1000) * es.zoom; }
+function xToMs(x) { return (x / es.zoom) * 1000; }
+
+function snapMs(ms) {
+  if(!es.snap || es.snap === 0) return ms;
+  const beatMs = 60000 / es.bpm;
+  const snapUnit = beatMs / es.snap;
+  return Math.round(ms / snapUnit) * snapUnit;
+}
+
+function getLaneFromY(y) {
+  for(let i=0; i<4; i++) {
+    if(y >= LANE_Y[i] && y < LANE_Y[i]+LANE_HEIGHT) return i;
+  }
+  return -1;
+}
+
+// ─── Canvas Mouse Events ───
+let isRightClick = false;
+
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect();
+  const scrollX = wrapper.scrollLeft;
+  const x = e.clientX - rect.left + scrollX;
+  const y = e.clientY - rect.top;
+
+  if(e.button === 1 || e.button === 2) {
+    // Middle/right = drag scroll
+    isRightClick = true;
+    es.dragging = true;
+    es.dragStartX = e.clientX;
+    es.scrollStart = wrapper.scrollLeft;
+    return;
+  }
+
+  isRightClick = false;
+  const ms = xToMs(x);
+  const lane = getLaneFromY(y);
+
+  if(lane >= 0) {
+    // Check if clicking existing note
+    let found = -1;
+    for(let i=0; i<es.notes.length; i++) {
+      const n = es.notes[i];
+      if(n.lane === lane && Math.abs(msToX(n.time) - x) < 10) {
+        found = i; break;
+      }
+    }
+    if(found >= 0) {
+      es.selectedNote = found;
+      updateSelectionInfo();
+    } else {
+      // Place note
+      const snapped = snapMs(ms);
+      es.notes.push({ time: snapped, lane });
+      es.notes.sort((a,b) => a.time - b.time);
+      es.selectedNote = null;
+    }
+    es.playheadMs = snapMs(ms);
+    redraw();
+  } else if(y < HEADER_H) {
+    // Click header = set playhead
+    es.playheadMs = snapMs(ms);
+    seekAudio(es.playheadMs);
+    redraw();
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  if(es.dragging && isRightClick) {
+    const dx = e.clientX - es.dragStartX;
+    wrapper.scrollLeft = es.scrollStart - dx;
+  }
+});
+
+canvas.addEventListener('mouseup', () => { es.dragging = false; });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// ─── Keyboard Shortcuts ───
+document.addEventListener('keydown', e => {
+  const tag = e.target.tagName.toLowerCase();
+  if(tag === 'input' || tag === 'textarea') return;
+
+  if(e.code === 'Space') { e.preventDefault(); togglePlay(); return; }
+  if(e.key === 's' || e.key === 'S') { stopAudio(); return; }
+  if((e.key === 'Delete' || e.key === 'Backspace') && es.selectedNote !== null) {
+    es.notes.splice(es.selectedNote, 1);
+    es.selectedNote = null;
+    updateSelectionInfo(); redraw(); return;
+  }
+  if(e.key === 'ArrowLeft') { es.playheadMs = Math.max(0, es.playheadMs - 100); seekAudio(es.playheadMs); redraw(); return; }
+  if(e.key === 'ArrowRight') { es.playheadMs = Math.min(es.duration, es.playheadMs + 100); seekAudio(es.playheadMs); redraw(); return; }
+
+  // Place note while playing
+  if(es.playing) {
+    const laneMap = { d:0, f:1, j:2, k:3 };
+    const k = e.key.toLowerCase();
+    if(k in laneMap) {
+      const ms = snapMs(es.playheadMs);
+      es.notes.push({ time: ms, lane: laneMap[k] });
+      es.notes.sort((a,b) => a.time - b.time);
+      return;
+    }
+  }
+
+  if(e.ctrlKey && e.key === 's') { e.preventDefault(); exportJSON(); }
+});
+
+// ─── Playback ───
+let rafId = null;
+
+function togglePlay() {
+  if(es.playing) pauseAudio();
+  else playAudio();
+}
+
+function playAudio() {
+  if(!es.audioCtx) es.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if(es.audioBuffer) {
+    if(es.audioSource) { try { es.audioSource.stop(); } catch(e){} }
+    es.audioSource = es.audioCtx.createBufferSource();
+    es.audioSource.buffer = es.audioBuffer;
+    es.audioSource.connect(es.audioCtx.destination);
+    es.audioSource.start(0, es.playheadMs/1000);
+    es.startAudioTime = es.audioCtx.currentTime;
+    es.startPlayheadMs = es.playheadMs;
+    es.audioSource.onended = () => { if(es.playing) stopAudio(); };
+  }
+  es.playing = true;
+  document.getElementById('tp-play').textContent = '⏸';
+  document.getElementById('tp-play').classList.add('playing');
+  loop();
+}
+
+function pauseAudio() {
+  if(es.audioSource) { try { es.audioSource.stop(); } catch(e){} }
+  es.playing = false;
+  document.getElementById('tp-play').textContent = '▶';
+  document.getElementById('tp-play').classList.remove('playing');
+  if(rafId) cancelAnimationFrame(rafId);
+  redraw();
+}
+
+function stopAudio() {
+  pauseAudio();
+  es.playheadMs = 0;
+  seekAudio(0);
+  redraw();
+}
+
+function seekAudio(ms) {
+  if(es.playing) {
+    pauseAudio();
+    es.playheadMs = ms;
+    playAudio();
+  } else {
+    es.playheadMs = ms;
+  }
+}
+
+function loop() {
+  if(!es.playing) return;
+  if(es.audioCtx) {
+    es.playheadMs = es.startPlayheadMs + (es.audioCtx.currentTime - es.startAudioTime)*1000;
+  }
+  updatePlayheadDisplay();
+  redraw();
+  // Auto-scroll
+  const px = msToX(es.playheadMs);
+  const vw = wrapper.clientWidth;
+  if(px > wrapper.scrollLeft + vw - 100) wrapper.scrollLeft = px - 100;
+  rafId = requestAnimationFrame(loop);
+}
+
+function updatePlayheadDisplay() {
+  const ms = es.playheadMs;
+  const s = ms / 1000;
+  const min = Math.floor(s/60);
+  const sec = Math.floor(s%60);
+  const ms2 = Math.floor(ms%1000);
+  document.getElementById('playhead-time').textContent =
+    `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}.${String(ms2).padStart(3,'0')}`;
+}
+
+// ─── Controls ───
+document.getElementById('tp-play').addEventListener('click', togglePlay);
+document.getElementById('tb-play').addEventListener('click', playAudio);
+document.getElementById('tp-stop').addEventListener('click', stopAudio);
+document.getElementById('tb-stop').addEventListener('click', stopAudio);
+document.getElementById('tp-rewind').addEventListener('click', () => { stopAudio(); });
+
+document.getElementById('zoom-range').addEventListener('input', e => {
+  es.zoom = +e.target.value;
+  redraw();
+});
+
+document.getElementById('bpm-input').addEventListener('change', e => {
+  es.bpm = +e.target.value || 128;
+  redraw();
+});
+
+document.getElementById('snap-select').addEventListener('change', e => {
+  es.snap = +e.target.value;
+});
+
+// ─── Note Controls ───
+document.querySelectorAll('.lane-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.lane-btn').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    es.selectedLane = +btn.dataset.l;
+  });
+});
+
+document.getElementById('add-note-btn').addEventListener('click', () => {
+  const t = +document.getElementById('note-time').value || 0;
+  const snapped = snapMs(t);
+  es.notes.push({ time: snapped, lane: es.selectedLane });
+  es.notes.sort((a,b) => a.time-b.time);
+  redraw();
+});
+
+document.getElementById('note-at-play-btn').addEventListener('click', () => {
+  const snapped = snapMs(es.playheadMs);
+  es.notes.push({ time: snapped, lane: es.selectedLane });
+  es.notes.sort((a,b) => a.time-b.time);
+  redraw();
+});
+
+// ─── Auto Generate ───
+document.getElementById('gen-btn').addEventListener('click', () => {
+  const start = +document.getElementById('gen-start').value || 0;
+  const end = +document.getElementById('gen-end').value || 10000;
+  const bpm = es.bpm;
+  const beatMs = 60000 / bpm;
+  const pattern = document.getElementById('gen-pattern').value;
+
+  let div = 1;
+  if(pattern === '4th') div = 1;
+  if(pattern === '8th') div = 2;
+
+  const lanes = [0,1,2,3];
+  let idx = 0;
+  for(let t=start; t<end; t+=beatMs/div) {
+    let lane;
+    if(pattern === 'rand') lane = Math.floor(Math.random()*4);
+    else if(pattern === 'alt') lane = idx%2===0 ? 0 : 2;
+    else { lane = lanes[idx%4]; }
+    es.notes.push({ time: Math.round(t), lane });
+    idx++;
+  }
+  es.notes.sort((a,b) => a.time-b.time);
+  redraw();
+  showToast(`Generated ${idx} notes`);
+});
+
+// ─── Subtitle Controls ───
+document.getElementById('add-sub-btn').addEventListener('click', addSubtitle);
+document.getElementById('sub-at-play-btn').addEventListener('click', () => {
+  document.getElementById('sub-time-inp').value = Math.round(es.playheadMs);
+  addSubtitle();
+});
+
+function addSubtitle() {
+  const t = +document.getElementById('sub-time-inp').value || Math.round(es.playheadMs);
+  const dur = +document.getElementById('sub-dur-inp').value || 3000;
+  const text = document.getElementById('sub-text-inp').value.trim();
+  if(!text) { showToast('Isi teks subtitle!'); return; }
+  es.subtitles.push({ time: t, duration: dur, text });
+  es.subtitles.sort((a,b) => a.time-b.time);
+  document.getElementById('sub-text-inp').value = '';
+  renderSubList();
+  redraw();
+}
+
+function renderSubList() {
+  const list = document.getElementById('sub-list');
+  list.innerHTML = '';
+  document.getElementById('sub-count').textContent = es.subtitles.length;
+  es.subtitles.forEach((sub, i) => {
+    const row = document.createElement('div');
+    row.className = 'sub-item';
+    const t = sub.time/1000;
+    const min = Math.floor(t/60);
+    const sec = (t%60).toFixed(2).padStart(5,'0');
+    row.innerHTML = `
+      <span class="sub-time-tag">${min}:${sec}</span>
+      <span class="sub-text-preview">${sub.text}</span>
+      <span class="sub-dur-tag">${(sub.duration/1000).toFixed(1)}s</span>
+      <span class="sub-del" data-i="${i}">✖</span>
+    `;
+    row.addEventListener('click', e => {
+      if(e.target.classList.contains('sub-del')) {
+        es.subtitles.splice(+e.target.dataset.i, 1);
+        renderSubList(); redraw();
+      } else {
+        es.playheadMs = sub.time;
+        seekAudio(sub.time);
+        redraw();
+        // Populate form for editing
+        document.getElementById('sub-time-inp').value = sub.time;
+        document.getElementById('sub-dur-inp').value = sub.duration;
+        document.getElementById('sub-text-inp').value = sub.text;
+      }
+    });
+    list.appendChild(row);
+  });
+}
+
+// ─── Selection ───
+function updateSelectionInfo() {
+  const info = document.getElementById('selection-info');
+  if(es.selectedNote === null) {
+    info.textContent = 'Klik note di timeline untuk select';
+  } else {
+    const n = es.notes[es.selectedNote];
+    info.textContent = `Lane: ${LANE_NAMES[n.lane]} | Time: ${n.time}ms`;
+  }
+}
+
+document.getElementById('del-selected-btn').addEventListener('click', () => {
+  if(es.selectedNote !== null) {
+    es.notes.splice(es.selectedNote, 1);
+    es.selectedNote = null;
+    updateSelectionInfo(); redraw();
+  }
+});
+
+document.getElementById('clear-all-btn').addEventListener('click', () => {
+  if(confirm('Hapus semua note?')) { es.notes = []; es.selectedNote = null; redraw(); }
+});
+
+// ─── Stats ───
+function updateStats() {
+  const counts = [0,0,0,0];
+  es.notes.forEach(n => counts[n.lane]++);
+  document.getElementById('stat-total').textContent = es.notes.length;
+  document.getElementById('stat-d').textContent = counts[0];
+  document.getElementById('stat-f').textContent = counts[1];
+  document.getElementById('stat-j').textContent = counts[2];
+  document.getElementById('stat-k').textContent = counts[3];
+  const last = es.notes[es.notes.length-1]?.time || 0;
+  const s = last/1000;
+  document.getElementById('stat-dur').textContent = `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+}
+
+// ─── Export / Import ───
+document.getElementById('tb-export').addEventListener('click', exportJSON);
+
+function exportJSON() {
+  const meta = {
+    title: document.getElementById('meta-title').value || 'Untitled',
+    artist: document.getElementById('meta-artist').value || '',
+    bpm: es.bpm,
+    offset: +document.getElementById('meta-offset').value || 0,
+  };
+  const data = { meta, notes: es.notes, subtitles: es.subtitles };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (meta.title.replace(/\s+/g,'_') || 'beatmap') + '.json';
+  a.click();
+  showToast('Beatmap diekspor: ' + a.download);
+}
+
+document.getElementById('tb-import').addEventListener('click', () => {
+  document.getElementById('tb-import-file').click();
+});
+
+document.getElementById('tb-import-file').addEventListener('change', e => {
+  const f = e.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      es.notes = d.notes || [];
+      es.subtitles = d.subtitles || [];
+      if(d.meta) {
+        document.getElementById('meta-title').value = d.meta.title || '';
+        document.getElementById('meta-artist').value = d.meta.artist || '';
+        document.getElementById('bpm-input').value = d.meta.bpm || 128;
+        es.bpm = d.meta.bpm || 128;
+      }
+      renderSubList();
+      redraw();
+      showToast(`Imported: ${es.notes.length} notes, ${es.subtitles.length} subtitles`);
+    } catch { showToast('File tidak valid!'); }
+  };
+  reader.readAsText(f);
+});
+
+// ─── Help ───
+document.getElementById('tb-help').addEventListener('click', () => {
+  document.getElementById('help-panel').style.display = 'flex';
+});
+document.getElementById('close-help').addEventListener('click', () => {
+  document.getElementById('help-panel').style.display = 'none';
+});
+
+// ─── Toast ───
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:40px;left:50%;transform:translateX(-50%);
+    background:rgba(0,245,255,0.15);border:1px solid rgba(0,245,255,0.4);
+    color:#fff;padding:8px 20px;font-family:Share Tech Mono;font-size:12px;
+    z-index:999;pointer-events:none;animation:fadeToast 2.5s ease forwards;
+    letter-spacing:1px;`;
+  t.textContent = msg;
+  const style = document.createElement('style');
+  style.textContent = '@keyframes fadeToast{0%{opacity:0}10%{opacity:1}80%{opacity:1}100%{opacity:0}}';
+  document.head.appendChild(style);
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+
+// ─── UNDO ───
+es.history = [];
+function saveHistory() {
+  es.history.push({ notes: JSON.stringify(es.notes), subtitles: JSON.stringify(es.subtitles) });
+  if(es.history.length > 50) es.history.shift();
+}
+function undo() {
+  if(!es.history.length) return;
+  const prev = es.history.pop();
+  es.notes = JSON.parse(prev.notes);
+  es.subtitles = JSON.parse(prev.subtitles);
+  renderSubList(); redraw(); showToast('Undo!');
+}
+document.addEventListener('keydown', e => {
+  if(e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+});
+
+// Wrap note-adding to save history
+const _origSpawn = spawnArrow ? null : null;
+const origAddNote = document.getElementById('add-note-btn').onclick;
+
+// Intercept note pushes via canvas click — wrap redraw
+const _origRedraw = redraw;
+
+// ─── RIGHT-CLICK DELETE on canvas ───
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left + wrapper.scrollLeft;
+  const y = e.clientY - rect.top;
+  const ms = xToMs(x);
+  const lane = getLaneFromY(y);
+  if(lane < 0) return;
+  const idx = es.notes.findIndex(n => n.lane===lane && Math.abs(msToX(n.time)-x)<12);
+  if(idx >= 0) {
+    saveHistory();
+    es.notes.splice(idx, 1);
+    redraw();
+    showToast('Note dihapus');
+  }
+});
+
+// ─── RECORD MODE: tap D/F/J/K while playing to place notes ───
+es.recording = false;
+
+// Override keyboard to capture note placements while playing
+const _origKeydown = document.onkeydown;
+document.addEventListener('keydown', e => {
+  if(!es.playing) return;
+  const laneMap = { d:0, f:1, j:2, k:3 };
+  const k = e.key.toLowerCase();
+  const tag = e.target.tagName.toLowerCase();
+  if(tag==='input'||tag==='textarea') return;
+  if(k in laneMap && es.playing) {
+    saveHistory();
+    const snapped = snapMs(es.playheadMs);
+    es.notes.push({ time: snapped, lane: laneMap[k] });
+    es.notes.sort((a,b)=>a.time-b.time);
+    // Flash lane indicator
+    showToast(`+ Note ${k.toUpperCase()} @ ${Math.round(es.playheadMs)}ms`);
+  }
+});
+
+// ─── SUBTITLE PREVIEW PANEL ───
+const previewEl = document.createElement('div');
+previewEl.id = 'sub-preview';
+previewEl.style.cssText = `
+  position:fixed;bottom:0;left:0;right:0;
+  height:36px;background:rgba(5,5,20,0.95);
+  border-top:1px solid rgba(6,214,160,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-family:Share Tech Mono,monospace;font-size:13px;
+  color:#fff;z-index:80;letter-spacing:1px;
+  text-shadow:0 0 10px rgba(0,245,255,0.4);
+  pointer-events:none;
+`;
+document.body.appendChild(previewEl);
+
+// Update preview during playback
+const _rafLoop = loop;
+function loop() {
+  _rafLoop && _rafLoop();
+  // Update subtitle preview
+  const elapsed = es.playheadMs;
+  let found = null;
+  for(const sub of es.subtitles){
+    if(elapsed >= sub.time && elapsed < sub.time+(sub.duration||3000)){ found=sub; break; }
+  }
+  previewEl.textContent = found ? '♪ ' + found.text + ' ♪' : '';
+}
+
+// ─── NOTE COUNT HEATMAP on stats bar ───
+function updateHeatmap() {
+  if(!es.notes.length) return;
+  const counts = [0,0,0,0];
+  es.notes.forEach(n => counts[n.lane]++);
+  const max = Math.max(...counts,1);
+  const bars = ['stat-d','stat-f','stat-j','stat-k'];
+  const cols = ['#ff006e','#ffbe0b','#00f5ff','#06d6a0'];
+  bars.forEach((id,i) => {
+    const el = document.getElementById(id);
+    if(el) el.style.color = cols[i];
+  });
+}
+// Call after redraw
+const __origRedraw = redraw;
+function redraw() { __origRedraw(); updateHeatmap(); }
+
+// ─── MIRROR / FLIP TOOL ───
+document.addEventListener('keydown', e => {
+  if(e.ctrlKey && e.key==='m') {
+    e.preventDefault();
+    saveHistory();
+    es.notes = es.notes.map(n => ({ ...n, lane: 3-n.lane }));
+    redraw(); showToast('Beatmap di-mirror!');
+  }
+});
+
+// ─── DENSITY ANALYSIS ───
+function getDensity() {
+  if(!es.notes.length) return;
+  const windows = {};
+  es.notes.forEach(n => {
+    const bucket = Math.floor(n.time/1000);
+    windows[bucket] = (windows[bucket]||0)+1;
+  });
+  const max = Math.max(...Object.values(windows));
+  showToast(`Max density: ${max} notes/sec at ${Object.entries(windows).sort((a,b)=>b[1]-a[1])[0][0]}s`);
+}
+document.getElementById('tb-help').addEventListener('dblclick', getDensity);
+
+// ─── Resize ───
+window.addEventListener('resize', redraw);
+
+// ─── Init ───
+setupCanvas();
+redraw();
+renderSubList();
+showToast('Beatmap Editor siap — Upload audio untuk mulai');
+</script>
+</body>
+</html>
