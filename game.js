@@ -14,7 +14,7 @@ let state = {
   score:0, combo:0, maxCombo:0,
   perfect:0, good:0, miss:0, health:100,
   arrows:[], beatmap:[], beatmapIdx:0,
-  subtitles:[], startTime:0,
+  // subtitles:[], startTime:0,
   laneHeight:0, hitY:0,
   audioLoaded:false, videoLoaded:false, beatmapLoaded:false,
   isDemo:false, totalNotes:0, noMiss:true,
@@ -76,7 +76,7 @@ document.getElementById('beatmap-upload').addEventListener('change', e => {
     try {
       const data = JSON.parse(ev.target.result);
       state.beatmap   = (data.notes || data).sort((a,b)=>a.time-b.time);
-      state.subtitles = data.subtitles || [];
+      // state.subtitles = data.subtitles || [];
       state.beatmapLoaded = true;
       loadStatus.textContent = `Beatmap: ${state.beatmap.length} notes, ${state.subtitles.length} subtitles`;
       updateLoadStatus();
@@ -153,7 +153,7 @@ function startGame(demo) {
           if(bgVideo.src) bgVideo.play();
         }
         state.startTime = performance.now() + Math.max(0, AUDIO_OFFSET);
-        subtitleEl.textContent='';
+        // subtitleEl.textContent='';
         requestAnimationFrame(loop);
       },400);
     }

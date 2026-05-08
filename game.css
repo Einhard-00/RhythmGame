@@ -7,7 +7,7 @@
     --neon-green: #06d6a0;
     --dark-bg: #050510;
     --panel-bg: rgba(5, 5, 20, 0.92);
-    --key-d: #ff006e;
+    --key-d: #fff6df;
     --key-f: #ffbe0b;
     --key-j: #00f5ff;
     --key-k: #06d6a0;
@@ -24,22 +24,20 @@
     user-select: none;
   }
 
-  /* ─── LAYOUT: 3:2 ratio ─── */
+  /* ─── LAYOUT: ratio ─── */
   #app {
-    display: flex;
-    flex-direction: row;
     height: 100vh;
     width: 100vw;
   }
 
   #video-zone {
-    flex: 3;
+    flex: 1;
     position: relative;
     overflow: hidden;
     background: #000;
   }
 
-  #subtitle-zone {
+  /*#subtitle-zone {
     flex: 2;
     flex-direction: column;
     position: relative;
@@ -49,7 +47,7 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-  }
+  }*/
 
   /* ─── VIDEO BACKGROUND ─── */
   #bg-video {
@@ -99,7 +97,7 @@
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 4px;
+    gap: 100px;
     width: 340px;
     height: 100%;
     z-index: 3;
@@ -108,9 +106,9 @@
   .lane {
     flex: 1;
     position: relative;
-    background: rgba(255,255,255,0.02);
+    /*background: rgba(255,255,255,0.02);
     border-left: 1px solid rgba(255,255,255,0.05);
-    border-right: 1px solid rgba(255,255,255,0.05);
+    border-right: 1px solid rgba(255,255,255,0.05);*/
   }
 
   /* Hit zone */
@@ -246,7 +244,7 @@
   }
 
   /* ─── SUBTITLE ZONE ─── */
-  #subtitle-bg-grid {
+  /*#subtitle-bg-grid {
     position: absolute;
     inset: 0;
     background-image:
@@ -274,10 +272,10 @@
   }
   @keyframes subFlash {
     0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; }
-  }
+  }*/
 
   /* Side decoration */
-  .sub-deco {
+  /*.sub-deco {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -298,7 +296,7 @@
     color: rgba(0,245,255,0.4);
     z-index: 2;
   }
-
+*/
   /* ─── OVERLAY SCREENS ─── */
   .overlay {
     position: fixed;
