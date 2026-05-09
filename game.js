@@ -14,8 +14,7 @@ let state = {
   score:0, combo:0, maxCombo:0,
   perfect:0, good:0, miss:0, health:100,
   arrows:[], beatmap:[], beatmapIdx:0,
-  // subtitles:[], startTime:0,
-  laneHeight:0, hitY:0,
+  startTime:0, laneHeight:0, hitY:0,
   audioLoaded:false, videoLoaded:false, beatmapLoaded:false,
   isDemo:false, totalNotes:0, noMiss:true,
 };
@@ -24,8 +23,6 @@ let state = {
 const audioEl    = document.getElementById('audio-player');
 const bgVideo    = document.getElementById('bg-video');
 const bgImage    = document.getElementById('bg-image');
-const subtitleEl = document.getElementById('subtitle-text');
-const timingEl   = document.getElementById('timing-indicator');
 const scoreEl    = document.getElementById('score-display');
 const comboEl    = document.getElementById('combo-num');
 const progressEl = document.getElementById('progress-bar');
@@ -75,8 +72,7 @@ document.getElementById('beatmap-upload').addEventListener('change', e => {
   reader.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      state.beatmap   = (data.notes || data).sort((a,b)=>a.time-b.time);
-      // state.subtitles = data.subtitles || [];
+      state.beatmap = (data.notes || data).sort((a,b)=>a.time-b.time);
       state.beatmapLoaded = true;
       loadStatus.textContent = `Beatmap: ${state.beatmap.length} notes`;
       updateLoadStatus();
@@ -100,14 +96,9 @@ function generateDemo() {
   const pat=[0,2,1,3,0,1,2,3,1,0,3,2,0,3,1,2];
   const notes=[];
   for(let i=0;i<96;i++) notes.push({time:1000+i*(beat/2), lane:pat[i%pat.length]});
-  state.beatmap   = notes;
-  state.subtitles = [
-    {time:0,    duration:2500, text:'RHYTHMFLOW DEMO'},
-    {time:2500, duration:2000, text:'Tekan  D  F  J  K'},
-    {time:4500, duration:2000, text:'Saat panah menyentuh zona hit!'},
-    {time:6500, duration:99999,text:'Keep the rhythm going!'},
-  ];
-  state.beatmapLoaded=true; state.isDemo=true;
+  state.beatmap = notes;
+  state.beatmapLoaded = true;
+  state.isDemo = true;
 }
 
 // Start game
@@ -128,10 +119,10 @@ function startGame(demo) {
   resultScreen.style.display='none';
   pauseScreen.style.display='none';
   Object.assign(state,{
-    running:false,paused:false,score:0,combo:0,maxCombo:0,
-    perfect:0,good:0,miss:0,health:100,
-    arrows:[],beatmapIdx:0,totalNotes:state.beatmap.length,
-    noMiss:true,isDemo:demo,
+    running:false, paused:false, score:0, combo:0, maxCombo:0,
+    perfect:0, good:0, miss:0, health:100,
+    arrows:[], beatmapIdx:0, totalNotes:state.beatmap.length,
+    noMiss:true, isDemo:demo,
   });
   fcNotice.style.display='none';
   document.querySelectorAll('.arrow').forEach(a=>a.remove());
@@ -153,7 +144,6 @@ function startGame(demo) {
           if(bgVideo.src) bgVideo.play();
         }
         state.startTime = performance.now() + Math.max(0, AUDIO_OFFSET);
-        // subtitleEl.textContent='';
         requestAnimationFrame(loop);
       },400);
     }
@@ -217,7 +207,6 @@ function loop(now){
     else break;
   }
 
-  updateSubtitle(elapsed);
   updateArrows(elapsed);
   checkMisses(elapsed);
   updateHUD(elapsed);
@@ -275,7 +264,7 @@ document.addEventListener('keydown', e=>{
   if(!(key in KEYS)) return;
   if(!state.running||state.paused) return;
   document.getElementById('lane-'+key)?.classList.add('active');
-  hitLane(KEYS[key], key);
+  hitLane(KEYS[key]);
 });
 document.addEventListener('keyup', e=>{
   const key=e.key.toLowerCase();
@@ -289,7 +278,7 @@ function hitLane(laneIdx){
   } else {
     elapsed=performance.now()-state.startTime;
   }
-  let best=null,bestDiff=Infinity;
+  let best=null, bestDiff=Infinity;
   for(const a of state.arrows){
     if(a.lane!==laneIdx||a.hit||a.missed) continue;
     const diff=Math.abs(elapsed-a.hitTime);
@@ -309,13 +298,12 @@ function registerHit(type,laneIdx,pts){
   const color=type==='PERFECT'?COLOR_HEX[laneIdx]:'#ffbe0b';
   showHitFx(laneIdx,type,color);
   spawnParticles(laneIdx,color);
-  flashSubtitle();
   updateHealth();
   if(state.noMiss&&state.combo>=10) fcNotice.style.display='block';
 }
 
 function registerMiss(laneIdx){
-  state.miss++;state.combo=0;state.noMiss=false;
+  state.miss++; state.combo=0; state.noMiss=false;
   state.health=Math.max(0,state.health-10);
   fcNotice.style.display='none';
   showHitFx(laneIdx,'MISS','#ff006e');
@@ -350,26 +338,6 @@ function showHitFx(laneIdx,text,color){
   setTimeout(()=>eff.remove(),500);
 }
 
-function flashSubtitle(){
-  if(!subtitleEl) return;
-  subtitleEl.classList.remove('flash');
-  void subtitleEl.offsetWidth;
-  subtitleEl.classList.add('flash');
-}
-
-function updateSubtitle(elapsed){
-  if(!subtitleEl || !state.subtitles || !state.subtitles.length) return;
-  for(const sub of state.subtitles){
-    if(elapsed>=sub.time && elapsed<sub.time+(sub.duration||3000)){
-      if(subtitleEl.dataset.subTime!==String(sub.time)){
-        subtitleEl.textContent=sub.text;
-        subtitleEl.dataset.subTime=sub.time;
-      }
-      return;
-    }
-  }
-}
-
 function updateHealth(){
   healthBar.style.height=state.health+'%';
   healthBar.style.background = state.health>60
@@ -387,10 +355,6 @@ function updateHUD(elapsed){
   document.getElementById('acc-num').textContent=acc+'%';
   const lastT=state.beatmap[state.beatmap.length-1]?.time||1;
   progressEl.style.width=Math.min(100,(elapsed/lastT)*100)+'%';
-  if(timingEl) {
-    const s=Math.floor(elapsed/1000);
-    timingEl.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-  }
 }
 
 function endGame(){
