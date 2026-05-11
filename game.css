@@ -8,9 +8,9 @@
     --dark-bg: #050510;
     --panel-bg: rgba(5, 5, 20, 0.92);
     --key-d: #fff6df;
-    --key-f: #ffbe0b;
-    --key-j: #00f5ff;
-    --key-k: #06d6a0;
+    --key-f: #fff6df;
+    --key-j: #fff6df;
+    --key-k: #fff6df;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -84,10 +84,10 @@
   #lanes {
     position: absolute;
     bottom: 0;
-    left: 50%;
+    left: 45%;
     transform: translateX(-50%);
     display: flex;
-    gap: 16px;
+    gap: 70px;
     width: 380px;
     height: 100%;
     z-index: 3;
@@ -107,8 +107,8 @@
     bottom: 48px;
     left: 50%;
     transform: translateX(-50%);
-    width: 64px;
-    height: 20px;
+    width: 102px;
+    height: 32px;
     border-radius: 4px;
     background: rgba(255,255,255,0.08);
     border: 2px solid rgba(255,255,255,0.2);
@@ -145,25 +145,25 @@
   /* ─── ARROWS ─── */
   .arrow {
     position: absolute;
-    width: 62px;
-    height: 28px;
+    width: 100px;
+    height: 40px;
     left: 50%;
     transform: translateX(-50%);
     border-radius: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 0px;
     font-weight: 900;
     clip-path: polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%);
     transition: opacity 0.1s;
     will-change: transform;
   }
 
-  .arrow.lane-d { background: var(--key-d); box-shadow: 0 0 10px var(--key-d); }
-  .arrow.lane-f { background: var(--key-f); box-shadow: 0 0 10px var(--key-f); }
-  .arrow.lane-j { background: var(--key-j); box-shadow: 0 0 10px var(--key-j); }
-  .arrow.lane-k { background: var(--key-k); box-shadow: 0 0 10px var(--key-k); }
+  .arrow.lane-d { background: var(--key-d); box-shadow: 0 0 0px var(--key-d); }
+  .arrow.lane-f { background: var(--key-f); box-shadow: 0 0 0px var(--key-f); }
+  .arrow.lane-j { background: var(--key-j); box-shadow: 0 0 0px var(--key-j); }
+  .arrow.lane-k { background: var(--key-k); box-shadow: 0 0 0px var(--key-k); }
 
   /* ─── HIT EFFECT ─── */
   .hit-effect {
@@ -200,24 +200,26 @@
 
   #score-display {
     font-size: 22px;
+    font-family: arial;
     font-weight: 900;
-    color: var(--neon-cyan);
-    text-shadow: 0 0 12px var(--neon-cyan);
+    color: #fff6df;
+    text-shadow: 0 0 12px black;
     letter-spacing: 2px;
   }
 
   #combo-display {
     font-size: 14px;
-    color: var(--neon-yellow);
-    text-shadow: 0 0 8px var(--neon-yellow);
+    font-family: arial;
+    color: #fff6df;
+    text-shadow: 0 0 8px black;
     text-align: center;
   }
   #combo-display span { font-size: 28px; display: block; font-weight: 900; }
 
   #accuracy-display {
     font-size: 13px;
-    color: var(--neon-green);
-    text-shadow: 0 0 8px var(--neon-green);
+    color: #fff6df;
+    text-shadow: 0 0 8px black;
     text-align: right;
   }
 

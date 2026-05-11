@@ -13,6 +13,10 @@
   <h1>EDITOR</h1>
   <label class="tb-btn" for="ed-audio">🎵 Audio</label>
   <input type="file" id="ed-audio" accept="audio/*">
+  <div id="audio-badge" style="display:none;font-size:10px;padding:4px 10px;
+       border:1px solid rgba(0,245,255,0.3);color:rgba(0,245,255,0.7);
+       letter-spacing:1px;white-space:nowrap;max-width:200px;
+       overflow:hidden;text-overflow:ellipsis;"></div>
   <div class="sep"></div>
   <button class="tb-btn" id="tb-play">▶ Play</button>
   <button class="tb-btn" id="tb-stop">■ Stop</button>
@@ -34,7 +38,7 @@
   <input type="range" id="zoom-range" min="50" max="500" value="120">
   <div class="sep"></div>
   <button class="tb-btn green" id="tb-export">💾 Export JSON</button>
-  <button class="tb-btn pink" id="tb-import">📂 Import</button>
+  <button class="tb-btn pink"  id="tb-import">📂 Import</button>
   <input type="file" id="tb-import-file" accept=".json" style="display:none">
   <button class="tb-btn" id="tb-help" style="margin-left:auto;">? Help</button>
 </div>
@@ -45,29 +49,27 @@
   <!-- SIDEBAR -->
   <div id="sidebar">
 
-    <!-- Note placement -->
     <div class="side-section">
       <h3>Tambah Note</h3>
       <div class="lane-selector">
         <button class="lane-btn sel" data-l="0">D</button>
-        <button class="lane-btn" data-l="1">F</button>
-        <button class="lane-btn" data-l="2">J</button>
-        <button class="lane-btn" data-l="3">K</button>
+        <button class="lane-btn"     data-l="1">F</button>
+        <button class="lane-btn"     data-l="2">J</button>
+        <button class="lane-btn"     data-l="3">K</button>
       </div>
       <div class="form-row">
         <label>Time (ms)</label>
         <input type="number" id="note-time" placeholder="auto" min="0">
       </div>
       <div style="display:flex;gap:6px;margin-top:4px;">
-        <button class="small-btn" id="add-note-btn" style="flex:1;">+ Tambah Note</button>
-        <button class="small-btn" id="note-at-play-btn" style="flex:1;">+ At Playhead</button>
+        <button class="small-btn" id="add-note-btn"    style="flex:1;">+ Tambah</button>
+        <button class="small-btn" id="note-at-play-btn" style="flex:1;">+ Playhead</button>
       </div>
       <div style="margin-top:8px;font-size:10px;color:rgba(255,255,255,0.3);">
         Shortcut: D/F/J/K saat play = place note
       </div>
     </div>
 
-    <!-- Auto-generate -->
     <div class="side-section">
       <h3>Auto Generate</h3>
       <div class="form-row">
@@ -90,37 +92,17 @@
       <button class="small-btn" id="gen-btn" style="width:100%;">⚡ Generate</button>
     </div>
 
-    <!-- Subtitle -->
-    <div class="side-section">
-      <h3>Subtitle</h3>
-      <div class="form-row">
-        <label>Time (ms)</label>
-        <input type="number" id="sub-time-inp" placeholder="playhead" min="0">
-      </div>
-      <div class="form-row">
-        <label>Durasi</label>
-        <input type="number" id="sub-dur-inp" value="3000" min="100">
-      </div>
-      <div style="margin-bottom:6px;">
-        <textarea id="sub-text-inp" placeholder="Teks subtitle lirik lagu..." style="width:100%;"></textarea>
-      </div>
-      <div style="display:flex;gap:6px;">
-        <button class="small-btn" id="add-sub-btn" style="flex:1;">+ Tambah</button>
-        <button class="small-btn" id="sub-at-play-btn" style="flex:1;">At Playhead</button>
-      </div>
-    </div>
-
-    <!-- Edit selection -->
     <div class="side-section">
       <h3>Selection</h3>
-      <div id="selection-info" style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:8px;">Klik note di timeline untuk select</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <div id="selection-info" style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:8px;">
+        Klik note di timeline untuk select
+      </div>
+      <div style="display:flex;gap:6px;">
         <button class="small-btn danger" id="del-selected-btn">🗑 Hapus</button>
-        <button class="small-btn" id="clear-all-btn">✖ Clear All</button>
+        <button class="small-btn"        id="clear-all-btn">✖ Clear All</button>
       </div>
     </div>
 
-    <!-- Metadata -->
     <div class="side-section">
       <h3>Metadata</h3>
       <div class="form-row">
@@ -137,7 +119,16 @@
       </div>
     </div>
 
-  </div>
+    <!-- ── PREVIEW BEATMAP ── -->
+    <div class="side-section" id="preview-section" style="flex:1;display:flex;flex-direction:column;min-height:200px;">
+      <h3>Preview Game</h3>
+      <canvas id="preview-canvas" style="width:100%;flex:1;border:1px solid rgba(0,245,255,0.1);"></canvas>
+      <div style="margin-top:5px;font-size:10px;color:rgba(255,255,255,0.2);text-align:center;letter-spacing:1px;">
+        ± 2 detik dari playhead
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
 
   <!-- TIMELINE AREA -->
   <div id="timeline-area">
@@ -146,21 +137,17 @@
       <button class="t-btn" id="tp-play">▶</button>
       <button class="t-btn" id="tp-stop">■</button>
       <div style="flex:1"></div>
-      <span style="font-size:11px;color:rgba(255,255,255,0.3);">Timeline — klik untuk place note | Drag untuk scroll</span>
+      <span style="font-size:11px;color:rgba(255,255,255,0.3);">
+        Klik lane untuk place note &nbsp;|&nbsp; Drag kanan untuk scroll &nbsp;|&nbsp; Klik kanan note untuk hapus
+      </span>
     </div>
 
     <div id="timeline-wrapper">
       <canvas id="timeline-canvas"></canvas>
     </div>
 
-    <!-- Subtitle list -->
-    <div id="sub-list-area">
-      <h3>SUBTITLES — <span id="sub-count" style="color:var(--yellow);">0</span> keyframe</h3>
-      <div id="sub-list"></div>
-    </div>
-
     <div id="stats-bar">
-      Total notes: <span id="stat-total">0</span> |
+      Total: <span id="stat-total">0</span> |
       D: <span id="stat-d">0</span>
       F: <span id="stat-f">0</span>
       J: <span id="stat-j">0</span>
@@ -168,7 +155,8 @@
       Durasi: <span id="stat-dur">0:00</span>
     </div>
   </div>
-</div>
+
+</div><!-- /main -->
 
 <!-- HELP PANEL -->
 <div id="help-panel">
@@ -177,23 +165,22 @@
     <table>
       <tr><td>Space</td><td>Play / Pause</td></tr>
       <tr><td>S</td><td>Stop & kembali ke awal</td></tr>
-      <tr><td>D / F / J / K</td><td>Place note di lane saat play</td></tr>
+      <tr><td>D / F / J / K</td><td>Place note saat play</td></tr>
       <tr><td>Delete / Backspace</td><td>Hapus note terpilih</td></tr>
-      <tr><td>Ctrl+Z</td><td>Undo (coming soon)</td></tr>
+      <tr><td>Ctrl+Z</td><td>Undo</td></tr>
+      <tr><td>Ctrl+M</td><td>Mirror / flip beatmap</td></tr>
       <tr><td>Ctrl+S</td><td>Export JSON</td></tr>
       <tr><td>← →</td><td>Geser playhead ±100ms</td></tr>
       <tr><td>Scroll</td><td>Scroll timeline</td></tr>
-      <tr><td>Klik timeline</td><td>Set playhead / place note</td></tr>
-      <tr><td>Klik note</td><td>Select note</td></tr>
+      <tr><td>Klik kanan canvas</td><td>Hapus note</td></tr>
     </table>
-    <div style="margin-top:20px;text-align:center;">
+    <div style="margin-top:16px;text-align:center;">
       <button class="tb-btn" id="close-help">TUTUP</button>
     </div>
   </div>
 </div>
 
 <audio id="ed-audio-player" preload="auto"></audio>
-
 <script src="editor.js"></script>
 </body>
 </html>
